@@ -183,9 +183,13 @@ El archivo `backup_lab2_laravel.sql` se incluye en el repositorio como respaldo 
 
 ## 📸 Resultado del Laboratorio
 
-![Dashboard de Usuario Autenticado] (./images/base de datos.png) (./images/registro.png)
+### 📝 Página de Registro
+![Página de Registro](./images/registro.png)
+*Formulario de registro de usuarios en el sistema*
 
-> *Imagen mostrando el dashboard principal después del login exitoso*
+### 🗄️ Base de Datos
+![Base de Datos](./images/base%20de%20datos.png)
+*Estructura de la base de datos MySQL del proyecto*
 
 ---
 
