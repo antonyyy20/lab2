@@ -27,7 +27,8 @@ Este proyecto implementa un sistema de autenticación completo utilizando **Lara
 - **PHP** 8.2 o superior
 - **Composer**
 - **Node.js** y **NPM**
-- **Base de datos SQLite** (incluida por defecto)
+- **MySQL** 8.0 o superior
+- **Servidor web** (Apache/Nginx) o **Laravel Sail**
 
 ### 1️⃣ Instalación de Dependencias
 
@@ -52,8 +53,10 @@ php artisan key:generate
 ### 3️⃣ Configuración de Base de Datos
 
 ```bash
-# Crear la base de datos SQLite (si no existe)
-touch database/database.sqlite
+# Crear la base de datos en MySQL
+mysql -u root -p
+CREATE DATABASE lab2_laravel;
+exit
 
 # Ejecutar las migraciones
 php artisan migrate
@@ -113,6 +116,9 @@ php artisan migrate:status
 
 # Rollback de migraciones (si es necesario)
 php artisan migrate:rollback
+
+# Generar backup de la base de datos
+mysqldump -u root -p lab2_laravel > backup_lab2_laravel.sql
 ```
 
 ---
@@ -120,43 +126,58 @@ php artisan migrate:rollback
 ## 🗄️ Base de Datos
 
 ### 🎯 Entorno de Base de Datos
-- **Tipo**: SQLite
-- **Archivo**: `database/database.sqlite`
+- **Tipo**: MySQL 8.0
+- **Nombre de la base de datos**: `lab2_laravel`
 - **Configuración**: Definida en el archivo `.env`
 
 ### ⚙️ Configuración en .env
 ```env
-DB_CONNECTION=sqlite
-DB_DATABASE=database/database.sqlite
+DB_CONNECTION=mysql
+DB_HOST=127.0.0.1
+DB_PORT=3306
+DB_DATABASE=lab2_laravel
+DB_USERNAME=root
+DB_PASSWORD=
 ```
 
 ### 📋 Tablas Creadas
 
 #### 1️⃣ **users**: Almacena información de usuarios
-- `id` (Primary Key)
-- `name`
-- `email` (único)
-- `email_verified_at`
-- `password` (hasheada)
-- `remember_token`
-- `timestamps`
+- `id` (Primary Key, Auto Increment)
+- `name` (VARCHAR 255)
+- `email` (VARCHAR 255, UNIQUE)
+- `email_verified_at` (TIMESTAMP NULL)
+- `password` (VARCHAR 255, hasheada)
+- `remember_token` (VARCHAR 100, NULL)
+- `created_at` (TIMESTAMP)
+- `updated_at` (TIMESTAMP)
 
 #### 2️⃣ **password_reset_tokens**: Tokens para recuperación de contraseñas
-- `email` (Primary Key)
-- `token`
-- `created_at`
+- `email` (VARCHAR 255, Primary Key)
+- `token` (VARCHAR 255)
+- `created_at` (TIMESTAMP NULL)
 
 #### 3️⃣ **sessions**: Sesiones de usuario
-- `id` (Primary Key)
-- `user_id` (Foreign Key)
-- `ip_address`
-- `user_agent`
-- `payload`
-- `last_activity`
+- `id` (VARCHAR 255, Primary Key)
+- `user_id` (BIGINT UNSIGNED, Foreign Key)
+- `ip_address` (VARCHAR 45, NULL)
+- `user_agent` (TEXT, NULL)
+- `payload` (LONGTEXT)
+- `last_activity` (INTEGER)
 
 ### 💾 Backup de Base de Datos
 
-El archivo `database/database.sqlite` se incluye en el repositorio como respaldo de la base de datos con la estructura inicial.
+Se generó un respaldo completo de la base de datos MySQL utilizando:
+
+```bash
+# Generar backup completo
+mysqldump -u root -p lab2_laravel > backup_lab2_laravel.sql
+
+# Restaurar backup (si es necesario)
+mysql -u root -p lab2_laravel < backup_lab2_laravel.sql
+```
+
+El archivo `backup_lab2_laravel.sql` se incluye en el repositorio como respaldo de la base de datos con la estructura inicial y datos de prueba.
 
 ---
 
@@ -170,12 +191,14 @@ El archivo `database/database.sqlite` se incluye en el repositorio como respaldo
 
 ## ⚠️ Dificultades y Soluciones
 
-### 🚨 Problema 1: Error de Migración
-**Descripción**: Error al ejecutar `php artisan migrate` debido a configuración incorrecta de base de datos.
+### 🚨 Problema 1: Error de Conexión a MySQL
+**Descripción**: Error al ejecutar `php artisan migrate` debido a configuración incorrecta de conexión a MySQL.
 
 **✅ Solución**: 
-- Verificar que el archivo `.env` tenga la configuración correcta para SQLite
-- Asegurar que el archivo `database/database.sqlite` exista
+- Verificar que MySQL esté ejecutándose correctamente
+- Verificar que el archivo `.env` tenga la configuración correcta para MySQL
+- Asegurar que la base de datos `lab2_laravel` exista
+- Verificar credenciales de usuario MySQL
 - Ejecutar `php artisan config:clear` antes de las migraciones
 
 ### 🚨 Problema 2: Assets No Compilados
@@ -193,6 +216,14 @@ El archivo `database/database.sqlite` se incluye en el repositorio como respaldo
 - Verificar que `Auth::routes()` esté incluido en `routes/web.php`
 - Asegurar que el middleware de autenticación esté configurado correctamente
 - Verificar que las vistas estén en las ubicaciones correctas
+
+### 🚨 Problema 4: Permisos de Base de Datos
+**Descripción**: Error de permisos al crear tablas en MySQL.
+
+**✅ Solución**:
+- Verificar que el usuario MySQL tenga permisos de CREATE, DROP, INSERT, UPDATE, DELETE
+- Ejecutar `GRANT ALL PRIVILEGES ON lab2_laravel.* TO 'root'@'localhost';`
+- Reiniciar el servicio MySQL si es necesario
 
 ---
 
@@ -214,6 +245,10 @@ El archivo `database/database.sqlite` se incluye en el repositorio como respaldo
    https://getbootstrap.com/docs/5.3/  
    *Documentación de Bootstrap para el diseño de las vistas de autenticación*
 
+5. **🐬 MySQL Documentation**  
+   https://dev.mysql.com/doc/  
+   *Documentación oficial de MySQL para configuración y administración*
+
 ---
 
 ## 🏗️ Estructura del Proyecto
@@ -228,7 +263,7 @@ lab2/
 │       └── User.php       # Modelo de usuario
 ├── database/
 │   ├── migrations/        # Archivos de migración
-│   └── database.sqlite    # Base de datos SQLite
+│   └── backup_lab2_laravel.sql  # Backup de MySQL
 ├── resources/
 │   └── views/
 │       ├── auth/          # Vistas de login/registro
@@ -251,6 +286,7 @@ El objetivo principal de este laboratorio es implementar un sistema de autentica
 - ✅ Integración de frontend con Bootstrap
 - ✅ Manejo de sesiones y middleware
 - ✅ Buenas prácticas de desarrollo con Laravel
+- ✅ Configuración y administración de base de datos MySQL
 
 ---
 
@@ -260,7 +296,8 @@ El objetivo principal de este laboratorio es implementar un sistema de autentica
 - 🔐 La autenticación incluye registro, login, logout y recuperación de contraseña
 - 🛡️ Se implementó middleware de autenticación para proteger rutas
 - 📱 El diseño es responsive utilizando **Bootstrap 5**
-- 💾 La base de datos SQLite facilita el desarrollo y testing
+- 🐬 La base de datos **MySQL** proporciona robustez y escalabilidad
+- 💾 Se incluye backup completo de la base de datos para respaldo
 
 ---
 
@@ -268,7 +305,6 @@ El objetivo principal de este laboratorio es implementar un sistema de autentica
 
 ---
 
-<div align="center">
 
 ### 📋 Información del Laboratorio
 
@@ -276,12 +312,10 @@ El objetivo principal de este laboratorio es implementar un sistema de autentica
 
 | Campo | Información |
 |-------|-------------|
-| **👤 Nombre:** | [Manuel Guillén] |
-| **📧 Correo:** | [manuel.guillen1@utp.ac.pa] |
-| **📚 Curso:** | [Ing. Web] |
+| **👤 Nombre:** | **Manuel Guillén** |
+| **📧 Correo:** | **manuel.guillen1@utp.ac.pa** |
+| **📚 Curso:** | **Ing. Web** |
 | **👩‍🏫 Instructor del Laboratorio:** | **Ing. Irina Fong** |
 
 ---
-
-
 
